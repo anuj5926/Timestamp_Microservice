@@ -30,37 +30,48 @@ const isValidDate = (dateString) => {
 };
 
 app.get("/api/:date?", async function (req, res) {
-  const dateObject = new Date(req.params.date);
-  if(isValidDate(dateObject)=== true){
-    res.json({
-      unix: dateObject.getTime(),
-      utc: `${dateObject.toUTCString()}`
-    });
+  if (req.params.date !== undefined) {
+    const dateObject = new Date(req.params.date);
+    if (isValidDate(dateObject) === true) {
+      res.json({
+        unix: dateObject.getTime(),
+        utc: `${dateObject.toUTCString()}`
+      });
+    }
+    else {
+      const date = await convertUnixToDate(req.params.date);
+      if(date === "Invalid Date"){
+       return res.json({
+          error:"Invalid Date"
+        })
+      }
+      else{
+        console.log("anuj",req.params.date," ", date);
+        res.json({
+          unix: parseInt(req.params.date),
+          utc: date.toString()
+        });
+
+      }
+    }
   }
-  else{
-    const date = await convertUnixToDate(req.params.date);
-    console.log(date)
+  else {
+    const currentDate = new Date();
+    const formattedDate = currentDate.toUTCString();
+    const unixTimestamp = currentDate.getTime();
+    // console.log(formattedDate," ",unixTimestamp);
     res.json({
-      unix: req.params.date,
-      utc: date
+      unix: unixTimestamp,
+      utc: formattedDate
     });
   }
 });
 
 const convertUnixToDate = (unixTimestamp) => {
-  const date = new Date(unixTimestamp / 1000); // Convert milliseconds to seconds
-  const options = {
-    weekday: 'short', // Short day name (e.g., "Fri")
-    day: '2-digit', // Day of the month (e.g., "25")
-    month: 'short', // Short month name (e.g., "Dec")
-    year: 'numeric', // Full year (e.g., "2015")
-    hour: '2-digit', // Hour in 24-hour format (e.g., "00")
-    minute: '2-digit', // Minutes (e.g., "00")
-    second: '2-digit', // Seconds (e.g., "00")
-    timeZoneName: 'short', // Time zone name (e.g., "GMT")
-  };
-  return date.toLocaleString('en-US', options);
+  const date = new Date(parseInt(unixTimestamp) ); // Convert milliseconds to seconds
+  return date.toUTCString();
 };
+
 
 // Listen on port set in environment variable or default to 3000
 var listener = app.listen(process.env.PORT || 3000, function () {
